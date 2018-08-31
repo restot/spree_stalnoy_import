@@ -1,0 +1,52 @@
+<% content_for :page_title do %>
+  <%= Spree.t(:yml_codes, scope: :yml_import) %>
+<% end %>
+
+<% content_for :page_actions do %>
+  <%= button_link_to Spree.t(:new_yml, scope: :yml_import), new_object_url, icon: 'plus', class: 'btn-primary', id: 'admin_new_stalnoy_import' %>
+  <% if @ymls.any? %>
+
+   <% end %>
+
+<% end %>
+
+<table class="table">
+  <thead>
+
+  <th><%= Spree.t(:name, scope: :yml_import) %></th>
+  <th><%= Spree.t(:update_price, scope: :yml_import) %></th>
+  <th><%= Spree.t(:update_available, scope: :yml_import) %></th>
+  <th><%= Spree.t(:repeat_at, scope: :yml_import) %></th>
+  <th><%= Spree.t(:actions, scope: :yml_import) %></th>
+  </thead>
+  <% if @ymls.any? %>
+    <tbody>
+       <% @ymls.each do |yml| %>
+          <tr>
+            <td><%= yml.name %> </td>
+            <td><%= yml.update_price %> </td>
+            <td><%= yml.update_available %> </td>
+            <td><%= yml.cron %> </td>
+            <td>
+              <%= button_tag(nil, class: 'btn red-b btn-sm btn-success hash-event', action: 'put', hash: yml.id , key: 'yml_start') do %>
+              <%= content_tag(:span,nil ,class: 'icon icon-circle-arrow-up') %>
+                <%= Spree.t(:update, scope: :yml_import) %>
+               <% end %>
+
+              <%= link_to_edit yml %>
+              <%= link_to_delete yml %>
+            </td>
+          </tr>
+       <% end %>
+    </tbody>
+<%end%>
+</table>
+
+<script type="text/javascript" charset="utf-8">
+    $( ".hash-event" ).click(function(e) {
+        id = $(e.currentTarget).attr('hash');
+        if ($(e.currentTarget).attr('action') == 'put') {
+            $.get('/admin/yml_code/' + id);
+        }
+    });
+</script>

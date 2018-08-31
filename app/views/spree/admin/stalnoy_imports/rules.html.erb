@@ -1,0 +1,39 @@
+<% content_for :page_title do %>
+    <%= Spree.t(:setup_rules, scope: :stalnoy_import) %>
+<% end %>
+<% content_for :page_actions do %>
+    <%= button_link_to Spree.t(:back_to_resource_list,scope: :stalnoy_import, resource: plural_resource_name(Spree::StalnoyImport)), spree.admin_stalnoy_imports_path, icon: 'arrow-left', class: 'btn-primary' %>
+
+
+<%end%>
+<table class="table">
+  <thead>
+
+  <th><%= Spree.t(:vendors, scope: :stalnoy_import) %></th>
+  <th><%= Spree.t(:load_at, scope: :stalnoy_import) %></th>
+  <th><%= Spree.t(:actions, scope: :stalnoy_import) %></th>
+  </thead>
+
+  <tbody>
+
+
+
+  <% if @stalnoy_imports.any? %>
+      <% @stalnoy_imports.each do |import| %>
+          <tr>
+            <td><%= import.name %></td>
+            <td><%= import.updated_at %></td>
+            <td><%= link_to Spree.t(:set_cols, scope: :stalnoy_import), admin_vcols_path(import),class:"btn btn-warning btn-sm icon-link with-tip action-edit" %>
+              <%= link_to Spree.t(:set_rows, scope: :stalnoy_import), admin_vrows_path(import),class:"btn btn-danger btn-sm icon-link with-tip action-edit " %></td>
+          </tr>
+      <% end %>
+      </tbody>
+      </table>
+  <% else %>
+      </tbody>
+      </table>
+      <div class="alert alert-warning no-objects-found">
+        <%= Spree.t(:no_resource_found, resource: Spree::SaleRate.model_name.human) %>,
+        <%= link_to Spree.t(:add_one), spree.new_admin_stalnoy_import_path %>!
+      </div>
+  <% end %>

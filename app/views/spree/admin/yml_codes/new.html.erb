@@ -1,0 +1,6 @@
+<% content_for :page_title do %>
+    <%= Spree.t(:new_yml, scope: :yml_import) %>
+<% end %>
+
+<%= render 'form', resource: @yml_code %>
+

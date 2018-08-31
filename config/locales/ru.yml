@@ -1,0 +1,46 @@
+ru:
+  activerecord:
+    attributes:
+      spree/stalnoy_import:
+    models:
+      spree/stalnoy_import:
+        few: Импорт
+        many: Импорты
+        one: Импорт
+        other: Импорт
+  spree:
+    stalnoy_import:
+      hide_all: 'Скрыть все'
+      import: "Импорт"
+      test: "Проверка"
+      vendors: "Поставщики "
+      file: "Файл"
+      actions: "Действия"
+      vendor: "Поставщики"
+      new_vendor: "Добавить поставщика"
+      back_to_resource_list: "Вернуться"
+      load_at: "Загружен"
+      setup_rules: "Правила"
+      set_cols: "Столбцы"
+      set_rows: "Строки"
+      update: "Обновить"
+      last_change_at: "Последнее изменение"
+      rules: "Правила"
+      edit_vendor: "Редактировать поставщика"
+      updating_vendor_seccessful: "Данные обновлены"
+      updating_vendor_failed: "Ошибка при попытке обновления"
+      upload: "Обновление"
+      preparing: "Подготовка"
+      currency: "Валюта"
+      updated: "Обновленно"
+      ready: "В ожидании"
+      done: "Обновление завершенно"
+      preparing: "Подготовка"
+    yml_import:
+      name: "Имя"
+      link: "Ссылка"
+      update_available: "Обновить наличие"
+      update_price: "Обновить цену"
+      cron: "Переодичность"
+      repeat_at: "Повторить в"
+

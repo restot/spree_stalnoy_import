@@ -1,0 +1,113 @@
+<% content_for :page_title do %>
+    <%= Spree.t(:set_cols, scope: :stalnoy_import) %>
+<% end %>
+
+<% content_for :page_actions do %>
+    <%= button_link_to Spree.t(:back_to_resource_list,scope: :stalnoy_import, resource: plural_resource_name(Spree::StalnoyImport)), admin_stalnoy_imports_path, icon: 'arrow-left', class: 'btn-primary' %>
+<% end %>
+<% content_for :head do %>
+    <%= stylesheet_link_tag "spree/backend/jquery.dataTables.min.css"%>
+    <%= javascript_include_tag "spree/backend/jquery.dataTables.min.js"%>
+
+<% end %>
+
+
+
+
+<%= bootstrap_form_tag url: admin_setcols_path(@stalnoy_import), method: 'put', layout: :inline do |f| %>
+    <%= f.text_field :width,label: "Ширина", value: @template["width"], class: @template["width"] %>
+    <%= f.text_field :item_code,label: "Артикул", value: @template["item_code"], class: "col_#{@template["item_code"]}" %>
+    <%= f.text_field :price,label: "Цена",  value: @template["price"], class: "col_#{@template["price"]}" %>
+    <%= f.text_field :currency,label: "Валюта",  value: @template["currency"], class: "col_#{@template["currency"]}" %>
+    <%= f.text_field :available,label: "Наличие",  value: @template["available"], class: "col_#{@template["available"]}" %>
+
+
+    <%= f.submit "Apply", layout: :horizontal %>
+<% end %>
+
+
+<hr>
+
+
+
+<table id="table" class="display" cellspacing="0" width="100%">
+  <thead>
+  <tr>
+    <% @width.times do |r| %>
+        <th><%= r %></th>
+    <% end %>
+  </tr>
+  </thead>
+
+  <tfoot>
+  <tr>
+    <% @width.times do |r| %>
+        <th><%= r %></th>
+    <% end %>
+  </tr>
+  </tfoot>
+
+<tbody>
+<% @preset.each do |row| %>
+
+    <tr>
+      <% row.each do |r| %>
+          <td ><%= r %></td>
+      <% end %>
+
+      <% if row.count < @width %>
+          <% (@width-row.count).times do |i| %>
+            <td></td>
+          <% end %>
+      <% end %>
+    </tr>
+<%end%>
+
+</tbody>
+</table>
+
+
+<script>
+    function highlight () {
+        if ("col_<%= @template["item_code"] %>".indexOf("col_") != -1 ) {
+            $(".col_<%= @template["item_code"] %>").css("background-color","rgba(245, 241, 133, 0.65)");
+        }
+        if ("col_<%= @template["price"] %>".indexOf("col_") != -1 ) {
+            $(".col_<%= @template["price"] %>").css("background-color","antiquewhite");
+        }
+        if ("col_<%= @template["currency"] %>".indexOf("col_") != -1 && "<%= @template["currency"] %>" !="$SOURCE" ) {
+            $(".col_<%= @template["currency"] %>").css("background-color","khaki");
+        }
+        if ("col_<%= @template["available"] %>".indexOf("col_") != -1 ) {
+            $(".col_<%= @template["available"] %>").css("background-color","lightgreen");
+        }
+
+    }
+
+
+
+    //asd
+    $(document).ready(function() {
+        var trable = $('#table').DataTable({
+
+            "iDisplayLength": -1,
+
+            "createdRow": function ( row, data, index ) {
+                if (data[122] == "false")
+                    $(row).addClass( 'skip_row' );
+
+                var i=0;
+                var ii=0;
+                $.each(row, function (a, value){
+
+
+                        $(row.cells[i]).addClass("col_"+(ii).toString());
+                        ii++;
+
+
+                    i++;
+                });
+                highlight();
+            }});
+    });
+</script>

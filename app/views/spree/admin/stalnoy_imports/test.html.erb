@@ -1,0 +1,112 @@
+<% content_for :page_title do %>
+    <%= Spree.t(:import, scope: :stalnoy_import) %>
+<% end %>
+
+
+<% content_for :page_actions do %>
+    <%= button_link_to Spree.t(:back_to_resource_list,scope: :stalnoy_import, resource: plural_resource_name(Spree::StalnoyImport)), admin_stalnoy_imports_path, icon: 'arrow-left', class: 'btn-primary' %>
+<% end %>
+<% content_for :head do %>
+    <%= javascript_include_tag "spree/backend/shim.js"%>
+<%= javascript_include_tag "spree/backend/xlsx.full.min.js"%>
+   <%= javascript_include_tag "spree/backend/countdown.min.js"%>
+<% end %>
+
+<pre>
+<input type="file" name="xlfile" id="xlf" />
+
+</pre>
+<div id="reader_time"></div>
+<pre id="out"></pre>
+
+
+<script>
+
+    /*jshint browser:true */
+    /* eslint-env browser */
+    /* eslint no-use-before-define:0 */
+    /*global Uint8Array, Uint16Array, ArrayBuffer */
+    /*global XLSX */
+    var X = XLSX;
+    var time_read;
+    var OUT = document.getElementById('out');
+    function to_json(workbook) {
+        var result = {};
+        workbook.SheetNames.forEach(function(sheetName) {
+            var roa = X.utils.sheet_to_json(workbook.Sheets[sheetName], {header:1});
+            if(roa.length) result[sheetName] = roa;
+        });
+        return JSON.stringify(result, 2, 2);
+    };
+
+    function process_wb(wb) {
+        var output = "";
+        output = to_json(wb);
+        window.clearInterval(time_read);
+        OUT.textContent = output;
+//           OUT.textContent = "Done!"
+//           timer_stop();
+        console.log("output", new Date());
+    };
+
+
+    function do_file(files) {
+
+        var f = files[0];
+        var reader = new FileReader();
+//         time_read = null;
+        time_read = countdown(new Date(),function(ts){$('#reader_time').html(ts.toHTML());},countdown.HOURS|countdown.MINUTES|countdown.SECONDS|countdown.MILLISECONDS,3,2);
+//         timer_start();
+        reader.onload = function(e) {
+            if(typeof console !== 'undefined') console.log("onload", new Date());
+            var data = e.target.result;
+            data = new Uint8Array(data);
+
+            process_wb(X.read(data, {type:'array', raw: true}));
+        };
+
+        reader.readAsArrayBuffer(f);
+    };
+
+    (function() {
+        var eventSource = new EventSource('<%= admin_stalnoy_import_test_stream_path %>');
+
+        eventSource.onopen = function(e) {
+            console.log("Соединение открыто");
+        };
+
+        eventSource.onerror = function(e) {
+            if (this.readyState == EventSource.CONNECTING) {
+                console.log("Соединение порвалось");
+                eventSource.close();
+            } else {
+                console.log("Ошибка, состояние: " + this.readyState);
+                eventSource.close();
+            }
+        };
+
+        eventSource.addEventListener('message', function(e) {
+            console.log("Пришли данные: " + e.data);
+            $('#out').append(e.data);
+
+        });
+
+        var xlf = document.getElementById('xlf');
+        if(!xlf.addEventListener) return;
+        function handleFile(e) { do_file(e.target.files); }
+        xlf.addEventListener('change', handleFile, false);
+    })();
+
+
+
+    //    function timer_start() {
+    //         time_read = countdown(new Date(),function(ts){$('#reader_time').html(ts.toHTML());},countdown.HOURS|countdown.MINUTES|countdown.SECONDS|countdown.MILLISECONDS,3,2);
+    //    };
+
+    //    function timer_stop() {
+    //        window.clearInterval(time_read);
+    //    };
+
+</script>
+
+

@@ -1,0 +1,112 @@
+
+<% content_for :head do %>
+    <%= javascript_include_tag "spree/backend/shim.js"%>
+    <%= javascript_include_tag "spree/backend/xlsx.full.min.js"%>
+    <%= javascript_include_tag "spree/backend/countdown.min.js"%>
+
+<% end %>
+<%= form_for [:admin, resource] do |f| %>
+    <div class="row" data-hook="admin_stalnpy_imports_form_fields">
+      <div class="col-md-2" data-hook="admin_stalnoy_imports_form">
+
+        <div class="form-group">
+          <%= f.label Spree.t(:vendor, scope: :stalnoy_import) %>
+          <%= f.text_field :name, class: 'form-control' %>
+          <%= f.error_message_on :name %>
+        </div>
+      </div>
+
+
+          <div class="col-md-4" data-hook="admin_stalnoy_imports_form">
+            <div class="form-group">
+              <%= f.label Spree.t(:file,scope: :stalnoy_import) %>
+              <input type="file" class="form-control " name="xlfile" id="xlf" />
+              <div id="reader_time"></div>
+              <%= f.text_field :data, class: 'hidden',id: "out" %>
+              <%= f.error_message_on :data %>
+            </div>
+          </div>
+    </div>
+
+
+
+    <%= render "spree/admin/shared/#{resource.new_record? ? 'new' : 'edit'}_resource_links" %>
+<% end %>
+
+
+    <script>
+
+        /*jshint browser:true */
+        /* eslint-env browser */
+        /* eslint no-use-before-define:0 */
+        /*global Uint8Array, Uint16Array, ArrayBuffer */
+        /*global XLSX */
+        var X = XLSX;
+        var time_read;
+        var X = XLSX;
+        var time_read;
+        var OUT = $('#out');
+        var output;
+        e = document.getElementById('xlf');
+        e_parent = e.parentNode;
+        function to_json(workbook) {
+            var result = {};
+            workbook.SheetNames.forEach(function(sheetName) {
+                var roa = X.utils.sheet_to_json(workbook.Sheets[sheetName], {header:1});
+                if(roa.length) result[sheetName] = roa;
+            });
+            return JSON.stringify(result, 2, 2);
+        };
+
+        function process_wb(wb) {
+
+            output = to_json(wb);
+            window.clearInterval(time_read);
+            OUT.val(output);
+//           OUT.textContent = "Done!"
+//           timer_stop();
+
+            var div = document.createElement('div');
+            div.className = "alert alert-success icon icon-ok form-control";
+            e_parent.replaceChild(div, e);
+            console.log("output", new Date());
+        };
+
+
+        function do_file(files) {
+
+            var f = files[0];
+            var reader = new FileReader();
+//         time_read = null;
+//            time_read = countdown(new Date(),function(ts){$('#reader_time').html(ts.toHTML());},countdown.HOURS|countdown.MINUTES|countdown.SECONDS|countdown.MILLISECONDS,3,2);
+//         timer_start();
+            reader.onload = function(e) {
+                if(typeof console !== 'undefined') console.log("onload", new Date());
+                var data = e.target.result;
+                data = new Uint8Array(data);
+
+                process_wb(X.read(data, {type:'array',raw: 'true', cellNF: 'true'}));
+            };
+
+            reader.readAsArrayBuffer(f);
+        };
+
+        (function() {
+            var xlf = document.getElementById('xlf');
+            if(!xlf.addEventListener) return;
+            function handleFile(e) { do_file(e.target.files); }
+            xlf.addEventListener('change', handleFile, false);
+        })();
+
+
+
+        //    function timer_start() {
+        //         time_read = countdown(new Date(),function(ts){$('#reader_time').html(ts.toHTML());},countdown.HOURS|countdown.MINUTES|countdown.SECONDS|countdown.MILLISECONDS,3,2);
+        //    };
+
+        //    function timer_stop() {
+        //        window.clearInterval(time_read);
+        //    };
+
+    </script>
+

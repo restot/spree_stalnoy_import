@@ -1,0 +1,154 @@
+<% content_for :page_title do %>
+    <%= Spree.t(:set_rows, scope: :stalnoy_import) %>
+<% end %>
+
+<% content_for :page_actions do %>
+    <%= button_link_to Spree.t(:back_to_resource_list,scope: :stalnoy_import, resource: plural_resource_name(Spree::StalnoyImport)), admin_stalnoy_imports_path, icon: 'arrow-left', class: 'btn-primary' %>
+    <button id="but">Skip rows</button>
+<% end %>
+<% content_for :head do %>
+    <%= stylesheet_link_tag "spree/backend/jquery.dataTables.min.css"%>
+    <%= javascript_include_tag "spree/backend/jquery.dataTables.min.js"%>
+
+<% end %>
+<style>
+    .skip_row {
+        color: red;
+        font-variant: small-caps;
+        background-color: gray !important;
+    }
+</style>
+
+<%= bootstrap_form_tag url: admin_setcols_path(@stalnoy_import), method: 'put', layout: :inline do |f| %>
+    <%= f.text_field :item_code,label: "Артикул", value: @template["item_code"], class: "col_#{@template["item_code"]}" %>
+    <%= f.text_field :price,label: "Цена",  value: @template["price"], class: "col_#{@template["price"]}" %>
+    <%= f.text_field :available,label: "Наличие",  value: @template["available"], class: "col_#{@template["available"]}" %>
+<% end %>
+
+<%= bootstrap_form_tag url: admin_setrows_path(@stalnoy_import), method: 'put', layout: :inline do |f| %>
+    <%= f.text_field :item_code,label: "Артикул",  value: @rules["item_code"] %>
+    <%= f.text_field :price,label: "Цена",  value: @rules["price"] %>
+
+    <%= f.text_field :available,label: "В наличии",  value: @rules["available"] %>
+    <%= f.text_field :unavailable,label: "Отсутствует",  value: @rules["unavailable"] %>
+    <%= f.text_field :on_order,label: "Под заказ",  value: @rules["on_order"] %>
+    <%= f.text_field :white_space,label: "white space",  value: @rules["white_space"] %>
+    <%= f.submit "Apply",layout: :horizontal %>
+<% end %>
+
+<table id="table" class="display" cellspacing="0" width="100%">
+  <thead>
+  <tr>
+    <th><%= @template["item_code"] %></th>
+    <th><%= @template["price"] %></th>
+    <th><%= @template["available"] %></th>
+  </tr>
+  </thead>
+
+  <tfoot>
+  <tr>
+    <th><%= @template["item_code"] %></th>
+    <th><%= @template["price"] %></th>
+    <th><%= @template["available"] %></th>
+  </tr>
+  </tfoot>
+
+  <tbody>
+  <% @preset.each do |row| %>
+      <% item_code_current_value = row[0] %>
+
+      <% price_current_value = (row[1].nil?)? 0 : row[1]  %>
+
+      <% available_current_value = row[2] %>
+      <% if StalnoyRules.bool_and(@ruls_item_code,item_code_current_value) and StalnoyRules.bool_and(@ruls_price,price_current_value) and (StalnoyRules.bool_or(@ruls_available,available_current_value) or StalnoyRules.bool_or(@ruls_on_order,available_current_value) or StalnoyRules.bool_or(@ruls_unavailable,available_current_value) ) %>
+
+          <tr>
+            <td><%= item_code_current_value %></td>
+            <td><%= price_current_value %></td>
+            <td><%= available_current_value %></td>
+          </tr>
+
+      <% else %>
+          <tr>
+            <% row.each do |r| %>
+                <td class="skip_row"><%= r %></td>
+            <% end %>
+          </tr>
+
+      <% end %>
+
+  <%end%>
+
+  </tbody>
+</table>
+
+
+
+
+<script>
+    function highlight () {
+        if ("col_<%= @template["item_code"] %>".indexOf("col_") != -1 ) {
+            $(".col_<%= @template["item_code"] %>").css("background-color","rgba(245, 241, 133, 0.65)");
+        }
+        if ("col_<%= @template["price"] %>".indexOf("col_") != -1 ) {
+            $(".col_<%= @template["price"] %>").css("background-color","antiquewhite");
+        }
+        if ("col_<%= @template["currency"] %>".indexOf("col_") != -1 && "<%= @template["currency"] %>" !="$SOURCE" ) {
+            $(".col_<%= @template["currency"] %>").css("background-color","khaki");
+        }
+        if ("col_<%= @template["available"] %>".indexOf("col_") != -1 ) {
+            $(".col_<%= @template["available"] %>").css("background-color","lightgreen");
+        }
+
+    }
+
+
+
+    //asd
+    $(document).ready(function() {
+        var i=0;
+        var table = $('#table').DataTable({
+
+            "iDisplayLength": -1,
+
+            "createdRow": function ( row, data, index ) {
+                $(row.cells).attr('index',i.toString());
+                i++;
+//
+//                var ii=0;
+//                $.each(row, function (a, value){
+//
+//
+//                    $(row.cells[i]).addClass("col_"+(ii).toString());
+//                    ii++;
+//
+//
+//                    i++;
+//                });
+//                highlight();
+            }});
+
+        $('#table tbody').on( 'click', 'tr', function () {
+            $(this).toggleClass('selected');
+        } );
+
+        $('#but').click( function () {
+            var arr = table.rows('.selected').data();
+            $('.selected').each(function() {
+                if ( $( this ).hasClass( "skip_row" ) ) {
+                    $(this).removeClass('skip_row');
+                } else {
+                    $(this).addClass('skip_row');
+                }
+            });
+            $.each(arr, function(index, value) {
+//            $.post( "<%#=url_for( controller: "stalnoy_import", action: "setrows", only_path: false  ) %>", { id: value[0] } );
+                console.log(value[0]);
+            });
+
+        } );
+    });
+
+
+
+</script>

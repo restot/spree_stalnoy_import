@@ -1,0 +1,5 @@
+<% if can? :admin, Spree::StalnoyImport %>
+    <ul class="nav nav-sidebar">
+      <%= tab Spree::StalnoyImport, url: spree.admin_stalnoy_imports_url, icon: 'share-alt', label: Spree.t(:import, scope: :stalnoy_import) %>
+    </ul>
+<% end %>

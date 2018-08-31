@@ -1,0 +1,157 @@
+<% content_for :page_title do %>
+    <%= Spree.t(:update, scope: :stalnoy_import) %>
+<% end %>
+
+<% content_for :head do %>
+    <%= javascript_include_tag "spree/backend/shim.js"%>
+    <%= javascript_include_tag "spree/backend/xlsx.full.min.js"%>
+   <%= javascript_include_tag "spree/backend/countdown.min.js"%>
+<% end %>
+
+<% content_for :page_actions do %>
+    <%= button_link_to Spree.t(:back_to_resource_list,scope: :stalnoy_import, resource: plural_resource_name(Spree::StalnoyImport)), admin_stalnoy_imports_path, icon: 'arrow-left', class: 'btn-primary' %>
+<% end %>
+<table class="table">
+  <thead>
+
+  <th><%= Spree.t(:vendors, scope: :stalnoy_import) %></th>
+  <th><%= Spree.t(:currency, scope: :stalnoy_import) %></th>
+  <th><%= Spree.t(:actions, scope: :stalnoy_import) %></th>
+  <th><%= Spree.t(:time, scope: :stalnoy_import) %></th>
+  </thead>
+
+  <tbody>
+
+
+
+      <% @stalnoy_imports.each do |import| %>
+          <tr>
+            <td><%= import.name %></td>
+            <td><%= (JSON.parse(import.cols)["currency"] == '$SOURCE')? Spree::Config.currency : JSON.parse(import.cols)["currency"] %></td>
+            <td><%= button_tag Spree.t(:update, scope: :stalnoy_import),class:"btn btn-success btn-sm icon-link with-tip action-edit vendor-event",vendor: import.id %></td>
+            <div class="progress" vendor="<%= import.id %>" id="progress-bar">
+              <% last_row= (import.last_row.nil?)? 0 : import.last_row.to_i + 1%>
+              <% total = (import.data_prepared.nil?)? 0 : ActiveSupport::JSON.decode(import.data_prepared).count + 1%>
+              <% progress = (last_row == 0 && total == 0)? 100 : last_row / total.to_f*100 %>
+              <div class="progress-bar <%= (last_row != 0 && total != 0 && progress == 100 )? 'progress-bar-success' : 'progress-bar-striped active progress-bar-warning' %>" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width:<%=  progress.to_s[0..5] %>%" id="vendor-bar-<%= import.id %>">
+                <span id="p-content-<%= import.id %>">[ <%= last_row %> / <%=total%> ]  <%= progress.to_s[0..5] %>% <%= import.name %> <%= (last_row != 0 && total != 0 && progress == 100 )? Spree.t(:updated, scope: :stalnoy_import) : Spree.t(:ready, scope: :stalnoy_import) %> </span>
+              </div>
+            </div>
+            <td id="vendor-time-<%=import.id%>"></td>
+          </tr>
+
+      <% end %>
+      </tbody>
+
+
+</table>
+
+<div id="out"></div>
+
+<script type="text/javascript" charset="utf-8">
+    function millisecondsToStr (milliseconds) {
+        // TIP: to find current time in milliseconds, use:
+        // var  current_time_milliseconds = new Date().getTime();
+
+        function numberEnding (number) {
+            return (number > 1) ? 's' : '';
+        }
+
+        var temp = Math.floor(milliseconds / 1000);
+        var years = Math.floor(temp / 31536000);
+        if (years) {
+            return years + ' year' + numberEnding(years);
+        }
+        //TODO: Months! Maybe weeks?
+        var days = Math.floor((temp %= 31536000) / 86400);
+        if (days) {
+            return days + ' day' + numberEnding(days);
+        }
+        var hours = Math.floor((temp %= 86400) / 3600);
+        if (hours) {
+            return hours + ' hour' + numberEnding(hours);
+        }
+        var minutes = Math.floor((temp %= 3600) / 60);
+        if (minutes) {
+            return minutes + ' minute' + numberEnding(minutes);
+        }
+        var seconds = temp % 60;
+        if (seconds) {
+            return seconds + ' second' + numberEnding(seconds);
+        }
+        return 'less than a second'; //'just now' //or other string you like;
+    }
+    var id;
+    var resp;
+    $( ".vendor-event" ).click(function(e) {
+
+        id = $(e.currentTarget).attr('vendor');
+        a = "#vendor-bar-" + id.toString();
+        $(a).removeClass('progress-bar-striped active progress-bar-warning');
+        $(a).addClass('progress-bar-success');
+        var eventSource = new EventSource('/admin/stalnoy_import_stream/' + id);
+
+    eventSource.onopen = function(e) {
+        console.log("Соединение открыто");
+    };
+
+    eventSource.onerror = function(e) {
+        if (this.readyState == EventSource.CONNECTING) {
+            console.log("Соединение порвалось");
+            eventSource.close();
+        } else {
+            console.log("Ошибка, состояние: " + this.readyState);
+            eventSource.close();
+        }
+    };
+
+    eventSource.addEventListener('message', function(e) {
+        console.log(e.data);
+//        $('#out').append(e.data);
+        resp = JSON.parse(e.data);
+
+        if (resp.status == "work") {
+            d = "#p-content-" + resp.id.toString();
+            p = "#vendor-name-" + resp.id.toString();
+            a = "#vendor-bar-" + resp.id.toString();
+            c = "#vendor-time-"+ resp.id.toString();
+            progress = (resp.last_row /resp.total ) * 100;
+            $(a).css('width',progress.toString() + '%');
+            text = "[ " + resp.last_row.toString() + " / " + resp.total.toString() + " ] " + progress.toString().substr(0, 5) +"% " + resp.vendor;
+            $(d).html(text);
+            time = resp.total - resp.last_row;
+            $(c).html(millisecondsToStr(time * 1000));
+
+
+        }
+        if (resp.status == "done") {
+            d = "#p-content-" + resp.id.toString();
+            p = "#vendor-name-" + resp.id.toString();
+            a = "#vendor-bar-" + resp.id.toString();
+            progress = (resp.last_row /resp.total ) * 100;
+            $(a).css('width',progress.toString() + '%');
+            text = "[ " + resp.last_row.toString() + " / " + resp.total.toString() + " ] " + progress.toString().substr(0, 5) +"% " + resp.vendor + " <%= Spree.t(:done, scope: :stalnoy_import)%>";
+            $(d).html(text);
+
+        }
+        if (resp.status == "preparing") {
+            d = "#p-content-" + resp.id.toString();
+            p = "#vendor-name-" + resp.id.toString();
+            a = "#vendor-bar-" + resp.id.toString();
+            progress = (resp.last_row /resp.total ) * 100;
+            $(a).css('width',progress.toString() + '%');
+            text = "[ " + resp.last_row.toString() + " / " + resp.total.toString() + " ] " + progress.toString().substr(0, 5) +"% " + resp.vendor + " <%= Spree.t(:preparing, scope: :stalnoy_import)%>";
+            $(d).html(text);
+
+        }
+
+    });
+    });
+
+
+
+    $(document).ready(function() {
+
+    });
+
+</script>

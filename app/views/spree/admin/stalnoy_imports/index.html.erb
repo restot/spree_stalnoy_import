@@ -1,0 +1,323 @@
+<% content_for :page_title do %>
+    <%= Spree.t(:import, scope: :stalnoy_import) %>
+<% end %>
+<% content_for :page_actions do %>
+  <%= button_link_to Spree.t(:yml_code, scope: :stalnoy_import), admin_yml_codes_path, icon: 'share-alt', class: 'btn-success' %>
+      <%= button_tag(nil, class: 'btn red-b btn-sm btn-danger hash-event',action: 'put', hash: 0, key: 'hide_all') do %>
+      <%= content_tag(:span,nil, class: 'icon icon-circle-arrow-up') %>
+      <%= Spree.t(:hide_all, scope: :stalnoy_import) %>
+      <% end %>
+    <%= button_link_to Spree.t(:test, scope: :stalnoy_import), admin_stalnoy_import_test_path, icon: 'flag', class: 'btn-primary', id: 'admin_stalnoy_import_test' %>
+    <%= button_link_to Spree.t(:new_vendor, scope: :stalnoy_import), new_object_url, icon: 'plus', class: 'btn-primary', id: 'admin_new_stalnoy_import' %>
+    <% if @stalnoy_imports.any? %>
+        <%= button_link_to Spree.t(:setup_rules, scope: :stalnoy_import), admin_stalnoy_import_rules_path, icon: 'th-list', class: 'btn-danger' %>
+        <%= button_link_to Spree.t(:update, scope: :stalnoy_import), admin_stalnoy_import_upload_path, icon: 'refresh', class: 'btn-success' %>
+    <% end %>
+
+<% end %>
+<% content_for :head do %>
+   <style>
+    .progress-bar-warning {
+      background-color: #478dc1;
+    }
+    .progress {
+      position: relative;
+      height: 40px;
+      margin-bottom: 0;
+    }
+    .progress-bar{
+      position: relative;
+      top: 20px;
+      height: 50%;
+    }
+    .index {
+      z-index: 2;
+      width: 100%;
+      display: block;
+      position: absolute;
+      text-align: center;
+    }
+    th,.center {
+      text-align: center;
+    }
+    .red_b{
+      width: 34px;
+
+    }
+    .green-b
+    {
+      width: calc(100% - 42px);
+    }
+    .modal-dialog {
+      width: 80%;
+    }
+
+  </style>
+<% end %>
+<div class="progress" hash="0" id="progress-bar">
+  <%# last_row= (import.last_row.nil?)? 0 : import.last_row.to_i + 1%>
+  <%# total = (import.data_prepared.nil?)? 0 : ActiveSupport::JSON.decode(import.data_prepared).count + 1%>
+  <%# progress = (last_row == 0 && total == 0)? 100 : last_row / total.to_f*100 %>
+  <% last_row= 0 %>
+  <% total = Spree::Product.where(discontinue_on: Time.now..Time.now + 14.day).count %>
+  <% progress = 0  %>
+  <span class="index" id="p-content-0">[ <%= last_row %> / <%=total%> ]  <%= progress.to_s[0..5] %>% <%= Spree.t(:hide_all, scope: :stalnoy_import) %> <%= (last_row != 0 && total != 0 && progress == 100 )? Spree.t(:updated, scope: :stalnoy_import) : Spree.t(:ready, scope: :stalnoy_import) %> </span>
+
+
+  <div class="progress-bar" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width:0%" id="hash-bar-0"></div>
+</div>
+<table class="table">
+  <thead>
+
+  <th><%= Spree.t(:vendors, scope: :stalnoy_import) %></th>
+  <th><%= Spree.t(:last_change_at, scope: :stalnoy_import) %></th>
+  <th><%= Spree.t(:actions, scope: :stalnoy_import) %></th>
+  <th><%= Spree.t(:rules, scope: :stalnoy_import) %></th>
+  </thead>
+
+  <tbody>
+
+
+
+  <% if @stalnoy_imports.any? %>
+      <% @stalnoy_imports.each do |import| %>
+          <tr>
+            <td><%= import.name %></td>
+            <td><%= TimeDifference.between(Time.now.utc,import.updated_at).humanize %></td>
+            <td><%= link_to_edit import %>
+              <%= link_to_delete import %>
+
+            </td>
+            <td>
+              <%= link_to Spree.t(:set_cols, scope: :stalnoy_import), admin_vcols_path(import),class:"btn btn-#{(import.cols.nil?)? 'danger': 'success'} btn-sm icon-link with-tip action-edit" %>
+              <%= link_to Spree.t(:set_rows, scope: :stalnoy_import), admin_vrows_path(import),class:"btn btn-#{(import.rows.nil?)? 'warning': 'success'} btn-sm icon-link with-tip action-edit " %>
+            </td>
+          </tr>
+      <% end %>
+      </tbody>
+      </table>
+  <% else %>
+      </tbody>
+      </table>
+      <div class="alert alert-warning no-objects-found">
+        <%= Spree.t(:no_resource_found, resource: Spree::StalnoyImport.model_name.human) %>,
+        <%= link_to Spree.t(:add_one), spree.new_admin_stalnoy_import_path %>!
+      </div>
+  <% end %>
+
+  <script type="text/javascript" charset="utf-8">
+      $( ".hash-event" ).click(function(e) {
+          progress = 0;
+          count = 0;
+          key = $(e.currentTarget).attr('key');
+          id = $(e.currentTarget).attr('hash');
+          a = "#hash-bar-" + id.toString();
+          if (typeof last_result !== 'undefined'){
+              last_result == undefined;
+          }
+          if ($(e.currentTarget).attr('action') == 'put') {
+              var eventSource = new EventSource('/admin/stalnoy_import_hide_all');
+          }
+          if ($(e.currentTarget).attr('action') == 'get') {
+
+              var eventSource = new EventSource('/admin/stalnoy_import_hide_all');
+
+
+
+          }
+
+
+          eventSource.onopen = function(e) {
+              console.log("Соединение открыто");
+          };
+
+          eventSource.onerror = function(e) {
+              if (this.readyState == EventSource.CONNECTING) {
+                  console.log("Соединение порвалось");
+                  eventSource.close();
+              } else {
+                  console.log("Ошибка, состояние: " + this.readyState);
+                  eventSource.close();
+              }
+          };
+
+          eventSource.addEventListener('message', function(e) {
+              console.log(e.data);
+//        $('#out').append(e.data);
+              resp = JSON.parse(e.data);
+
+              if (resp.status == "work") {
+                  //a = "#hash-bar-" + resp.id.toString();
+                  bar = $('.progress[hash=' + resp.id.toString() +']')
+                  a = $('.progress[hash=' + resp.id.toString() +']').children().last();
+                  inc = 100 / resp.total;
+
+
+                  if (typeof last_result === 'undefined')
+                  {   last_result = resp.result
+                      if (resp.result == true) {
+                          a.addClass('progress-bar-warning');
+                      } else
+                      {
+                          a.addClass('progress-bar-danger');
+                      }
+                      // progress = 0;
+                      //count = 0;
+
+                  }
+
+                  if (last_result == resp.result) {
+
+                      progress = progress + inc ;
+                      a.css('width',progress.toString() + '%');
+                      count++;
+                      a.html(count.toString());
+
+
+                  } else {
+                      if (resp.result == true) {
+                          bar.append('<div class="progress-bar progress-bar-warning" role="progressbar"></div>');
+                      } else
+                      {
+                          bar.append('<div class="progress-bar progress-bar-danger" role="progressbar"></div>');
+                      }
+                      count=1;
+                      progress = 0;
+                      progress = progress + inc ;
+                      a = $('.progress[hash=' + resp.id.toString() +']').children().last();
+                      $(a).css('width',progress.toString() + '%');
+                      a.html(count.toString());
+                      last_result = resp.result;
+
+
+                      //$('.progress[hash=8]').children().last().css('width','10%')
+                      //$('.progress[hash=8]').append('<div class="progress-bar progress-bar-danger" role="progressbar" style="width:10%"></div>');
+                  }
+
+
+
+                  d = "#p-content-" + resp.id.toString();
+
+                  // a = "#hash-bar-" + resp.id.toString();
+                  progress_all = (resp.last_row /resp.total ) * 100;
+                  //$(a).css('width',progress.toString() + '%');
+
+                  text = "[ " + resp.last_row.toString() + " / " + resp.total.toString() + " ] " + progress_all.toString().substr(0, 5) +"% " + resp.hash + " <%= Spree.t(:preparing, scope: :stalnoy_import)%>";
+                  $(d).html(text);
+
+
+
+              }
+              if (resp.status == "done") {
+                  l = $('.progress[hash=' + resp.id.toString() +']').children().length - 1;
+                  l = 100 / l;
+                  $('.progress[hash=' + resp.id.toString() +']').children().not('.index').css('width', l.toString() + '%');
+                  // d = "#p-content-" + resp.id.toString();
+                  // p = "#vendor-name-" + resp.id.toString();
+                  //  a = "#hash-bar-" + resp.id.toString();
+                  progress = (resp.last_row /resp.total ) * 100;
+                  //$(a).css('width',progress.toString() + '%');
+                  text = "[ " + resp.last_row.toString() + " / " + resp.total.toString() + " ] " + progress.toString().substr(0, 5) +"% " + resp.hash + " <%= Spree.t(:done, scope: :stalnoy_import)%>";
+                  $(d).html(text);
+
+              }
+              if (resp.status == "preparing") {
+                  //a = "#hash-bar-" + resp.id.toString();
+                  bar = $('.progress[hash=' + resp.id.toString() +']')
+                  a = $('.progress[hash=' + resp.id.toString() +']').children().last();
+                  inc = 100 / resp.total;
+
+
+                  if (typeof last_result === 'undefined')
+                  {   last_result = resp.result
+                      if (resp.result == true) {
+                          a.addClass('progress-bar-warning');
+                      } else
+                      {
+                          a.addClass('progress-bar-danger');
+                      }
+                      // progress = 0;
+                      //count = 0;
+
+                  }
+
+                  if (last_result == resp.result) {
+
+                      progress = progress + inc ;
+                      a.css('width',progress.toString() + '%');
+                      count++;
+                      a.html(count.toString());
+
+
+                  } else {
+                      if (resp.result == true) {
+                          bar.append('<div class="progress-bar progress-bar-warning" role="progressbar"></div>');
+                      } else
+                      {
+                          bar.append('<div class="progress-bar progress-bar-danger" role="progressbar"></div>');
+                      }
+                      count=1;
+                      progress = 0;
+                      progress = progress + inc ;
+                      a = $('.progress[hash=' + resp.id.toString() +']').children().last();
+                      $(a).css('width',progress.toString() + '%');
+                      a.html(count.toString());
+                      last_result = resp.result;
+
+
+                      //$('.progress[hash=8]').children().last().css('width','10%')
+                      //$('.progress[hash=8]').append('<div class="progress-bar progress-bar-danger" role="progressbar" style="width:10%"></div>');
+                  }
+
+
+
+                  d = "#p-content-" + resp.id.toString();
+
+                  // a = "#hash-bar-" + resp.id.toString();
+                  progress_all = (resp.last_row /resp.total ) * 100;
+                  //$(a).css('width',progress.toString() + '%');
+
+                  text = "[ " + resp.last_row.toString() + " / " + resp.total.toString() + " ] " + progress_all.toString().substr(0, 5) +"% " + resp.hash + " <%= Spree.t(:preparing, scope: :stalnoy_import)%>";
+                  $(d).html(text);
+
+              }
+
+              if (resp.status == "error") {
+                  $('#myModal').modal()
+                  $('#modal-content').html(resp.content);
+                  $('#modal-trace').html(resp.trace);
+              }
+
+          });
+      });
+  </script>
+
+
+  <div class="modal" tabindex="-1" role="dialog" id="myModal">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p id="modal-content"></p>
+
+          <p id="modal-trace"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <script type="text/javascript" charset="utf-8">
+      (function(){
+          $('.page-actions').removeClass('col-xs-8');
+          $('.page-actions').addClass('col-xs-12');
+      })();
+  </script>
