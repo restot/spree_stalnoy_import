@@ -39,19 +39,30 @@ module Spree
             @template = ActiveSupport::JSON.decode(@vendor.cols)
             @data.count.times do |i|
               item_code_current_value = @data[i][@template["item_code"].to_i]
-              price_current_value = (@rules["white_space"] == 'true') ? @data[i][@template["price"].to_i].to_s.sub(',', '.').to_f : (@rules["white_space"] == 'false') ? @data[i][@template["price"].to_i].to_s.sub(',', '.').to_f : @data[i][@template["price"].to_i].to_f
+              price_current_value = (@rules["white_space"] == 'true') ? @data[i][@template["price"].to_i].to_s.sub(',', '').to_f : (@rules["white_space"] == 'false') ? @data[i][@template["price"].to_i].to_s.sub(',', '.').to_f : @data[i][@template["price"].to_i].to_f
               available_current_value = @data[i][@template["available"].to_i]
 
               if StalnoyRules.bool_and(@ruls_item_code, item_code_current_value) and StalnoyRules.bool_and(@ruls_price, price_current_value) and (StalnoyRules.bool_or(@ruls_available, available_current_value) or StalnoyRules.bool_or(@ruls_on_order, available_current_value) or StalnoyRules.bool_or(@ruls_unavailable, available_current_value))
-
-
                 @preset << [
                     item_code_current_value,
-                    price_current_value.to_s.sub(',', '.'),
+                    price_current_value,
                     available_current_value
                 ]
+                response.stream.write "data: #{Hash['status' => 'preparing',
+                                                    'total' => @data.count,
+                                                    'last_row' => i + 1,
+                                                    'item_code' => item_code_current_value,
+                                                    'price' => price_current_value,
+                                                    'id' => params[:id]].to_json}\n\n"
+              else
+                response.stream.write "data: #{Hash['status' => 'preparing',
+                                                    'total' => @data.count,
+                                                    'last_row' => i + 1,
+                                                    'item_code' => item_code_current_value,
+                                                    'state' => 'error',
+                                                    'id' => params[:id]].to_json}\n\n"
               end
-              response.stream.write "data: #{Hash['status' => 'preparing', 'total' => @data.count, 'last_row' => i + 1, 'id' => params[:id]].to_json}\n\n"
+
             end
             @vendor.update(data_prepared: @preset.to_json)
           end
@@ -66,7 +77,7 @@ module Spree
         # end
 
         unless params[:id].nil?
-          @count = ActiveSupport::JSON.decode(@vendor.data_prepared).count
+          @count = ActiveSupport::JSON.decode(@vendor.data_prepared).length
           # @count += 1;
           last_row = (@vendor.last_row.nil?) ? 0 : @vendor.last_row
           if @count > last_row
@@ -82,11 +93,11 @@ module Spree
                 currency = JSON.parse(@vendor.cols)["currency"]
 
                 if (currency == '$SOURCE' or currency == nil or currency == '')
-                  variant.delay.update(price: row[1].to_d)
+                  variant.update(cost_price: row[1].to_s.to_d)
 
                   Spree::Product.find_by(id: variant.product_id).update(discontinue_on: Time.now + 14.day)
                 else
-                  variant.delay.update(price: row[1].to_d, cost_currency: currency)
+                  variant.update(cost_price: row[1].to_s.to_d, cost_currency: currency)
                   Spree::Product.find_by(id: variant.product_id).update(discontinue_on: Time.now + 14.day)
                 end
                 response.stream.write "data: #{Hash['status' => 'work',
@@ -95,7 +106,6 @@ module Spree
                                                     'id' => params[:id],
                                                     'vendor' => @vendor.name,
                                                     'currency' => currency,
-                                                    'vendor' => @vendor.name,
                                                     'item_code' => row[0],
                                                     'price' => row[1]
                 ].to_json}\n\n"
@@ -256,16 +266,17 @@ module Spree
       end
 
       def update_price
-        @vendor = Spree::StalnoyImport.find(params[:id])
-        unless params[:id].nil?
-          data = ActiveSupport::JSON.decode(@vendor.data_prepared).to_a
-          data.each_with_index do |row, index|
-            variant = Spree::Variant.find_by(sku: row[0])
-            unless variant.nil?
-              variant.update(price: row[1].to_d,cost_currency:'USD',discontinue_on: Time.now + 14.day)
-            end
-          end
-        end
+        # @vendor = Spree::StalnoyImport.find(params[:id])
+        # unless params[:id].nil?
+        #   data = ActiveSupport::JSON.decode(@vendor.data_prepared).to_a
+        #   data.each_with_index do |row, index|
+        #     variant = Spree::Variant.find_by(sku: row[0])
+        #     unless variant.nil?
+        #       variant.update(price: row[1].to_d,cost_currency:'USD',discontinue_on: Time.now + 14.day)
+        #     end
+        #   end
+        # end
+        Rails.logger.error 'update_price depricated'
       end
 
 
