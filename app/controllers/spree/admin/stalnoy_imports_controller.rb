@@ -93,11 +93,11 @@ module Spree
                 currency = JSON.parse(@vendor.cols)["currency"]
 
                 if (currency == '$SOURCE' or currency == nil or currency == '')
-                  variant.update(cost_price: row[1].to_s.to_f)
+                  variant.update(price: row[1].to_s.to_f)
 
                   Spree::Product.find_by(id: variant.product_id).update(discontinue_on: Time.now + 14.day)
                 else
-                  variant.update(cost_price: row[1].to_s.to_f, cost_currency: currency)
+                  variant.update(price: row[1].to_s.to_f, cost_currency: currency)
                   Spree::Product.find_by(id: variant.product_id).update(discontinue_on: Time.now + 14.day)
                 end
                 response.stream.write "data: #{Hash['status' => 'work',
@@ -107,7 +107,8 @@ module Spree
                                                     'vendor' => @vendor.name,
                                                     'currency' => currency,
                                                     'item_code' => row[0],
-                                                    'price' => row[1]
+                                                    'price' => row[1],
+                                                    'spree_price' => variant.price.to_f
                 ].to_json}\n\n"
                 else
                 response.stream.write "data: #{Hash['status' => 'work',
