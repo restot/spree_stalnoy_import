@@ -89,8 +89,9 @@ module Spree
               end
 
               variant = Spree::Variant.find_by(sku: row[0])
-              old_price = variant.price
+              
               if !variant.nil?
+                old_price = variant.price
                 currency = JSON.parse(@vendor.cols)["currency"]
 
                 if (currency == '$SOURCE' or currency == nil or currency == '')
