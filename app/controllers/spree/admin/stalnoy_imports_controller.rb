@@ -109,7 +109,6 @@ module Spree
                                                     'currency' => currency,
                                                     'item_code' => row[0],
                                                     'price' => row[1],
-                                                    'spree_price' => variant.price.to_f,
                                                     'old_price' => old_price
                 ].to_json}\n\n"
                 else
