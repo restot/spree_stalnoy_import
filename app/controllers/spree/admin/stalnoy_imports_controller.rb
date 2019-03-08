@@ -95,9 +95,9 @@ module Spree
                 currency = JSON.parse(@vendor.cols)["currency"]
 
                 if (currency == '$SOURCE' or currency == nil or currency == '')
-                  Spree::Variant.find_by(sku: row[0]).update(price: row[1].to_s.to_f)
+                  Spree::Variant.find_by(sku: row[0]).update(cost_price: row[1].to_f)
                 else
-                  Spree::Variant.find_by(sku: row[0]).update(price: row[1].to_s.to_f, cost_currency: currency)
+                  Spree::Variant.find_by(sku: row[0]).update(cost_price: row[1].to_f, cost_currency: currency)
                 end
                 
                   Spree::Product.find_by(id: variant.product_id).update(discontinue_on: Time.now + 14.day)
