@@ -93,12 +93,17 @@ module Spree
               if !variant.nil?
                 old_price = variant.price
                 currency = JSON.parse(@vendor.cols)["currency"]
+                available_was = variant.backorderable?
+                available_now = StalnoyRules.bool_and(@ruls_available, row[2])
 
                 if (currency == '$SOURCE' or currency == nil or currency == '')
                   Spree::Variant.find_by(sku: row[0]).update(cost_price: row[1].to_f)
                 else
                   Spree::Variant.find_by(sku: row[0]).update(cost_price: row[1].to_f, cost_currency: currency)
                 end
+                
+                Spree::Variant.find_by(sku: row[0]).stock_items.update(backorderable: available_now)
+                
                 
                   Spree::Product.find_by(id: variant.product_id).update(discontinue_on: Time.now + 14.day)
                 
@@ -110,7 +115,9 @@ module Spree
                                                     'currency' => currency,
                                                     'item_code' => row[0],
                                                     'price' => row[1],
-                                                    'old_price' => old_price
+                                                    'old_price' => old_price,
+                                                    'available_status_now' => available_now,
+                                                    'available_status_before' => available_was
                 ].to_json}\n\n"
                 else
                 response.stream.write "data: #{Hash['status' => 'work',
