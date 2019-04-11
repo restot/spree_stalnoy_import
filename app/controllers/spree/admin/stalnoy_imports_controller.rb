@@ -94,7 +94,7 @@ module Spree
                 old_price = variant.price
                 currency = JSON.parse(@vendor.cols)["currency"]
                 available_was = variant.backorderable?
-                available_now = StalnoyRules.bool_and(@ruls_available, row[2])
+                available_now = StalnoyRules.bool_or(@ruls_available, row[2])
 
                 if (currency == '$SOURCE' or currency == nil or currency == '')
                   Spree::Variant.find_by(sku: row[0]).update(cost_price: row[1].to_f)
